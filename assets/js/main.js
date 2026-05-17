@@ -1,12 +1,21 @@
-// News Portal Main JavaScript
+// ========================================
+// NEWS PORTAL - FRONTEND JAVASCRIPT
+// ========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    initDarkMode();
+    initNewsletter();
+    initLiveSearch();
+    initCopyLink();
+    initLikeSystem();
+});
 
 // Dark Mode Toggle
 function initDarkMode() {
     const toggle = document.getElementById('darkModeToggle');
     if (!toggle) return;
 
-    const currentTheme = localStorage.getItem('theme') || (document.body.classList.contains('dark-mode') ? 'dark' : 'light');
-    
+    const currentTheme = localStorage.getItem('theme');
     if (currentTheme === 'dark') {
         document.body.classList.add('dark-mode');
         toggle.innerHTML = '<i class="fas fa-sun"></i>';
@@ -25,35 +34,31 @@ function initNewsletter() {
     const forms = document.querySelectorAll('#newsletterForm, #homeNewsletter, #sidebarNewsletter');
     
     forms.forEach(form => {
-        form.addEventListener('submit', async (e) => {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             const emailInput = form.querySelector('input[type="email"]');
             if (!emailInput) return;
-            
-            const email = emailInput.value;
-            const btn = form.querySelector('button[type="submit"]');
+
+            const btn = form.querySelector('button');
             const originalText = btn.innerHTML;
-            
             btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
             btn.disabled = true;
 
             try {
-                const response = await fetch('<?= BASE_URL ?>/api/subscribe.php', {
+                const response = await fetch('/api/subscribe.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email })
+                    body: JSON.stringify({ email: emailInput.value })
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    const msg = form.parentElement.querySelector('#newsletterMsg') || form;
-                    msg.innerHTML = `<div class="alert alert-success small py-1 mt-2">Thank you! Check your inbox.</div>`;
-                    emailInput.value = '';
+                    form.innerHTML = `<div class="alert alert-success py-2">Thank you! You are now subscribed.</div>`;
                 } else {
                     alert(data.message || 'Something went wrong');
                 }
-            } catch (err) {
+            } catch (error) {
                 alert('Network error. Please try again.');
             } finally {
                 btn.innerHTML = originalText;
@@ -63,67 +68,88 @@ function initNewsletter() {
     });
 }
 
-// Live Search (AJAX)
+// Live Search Suggestions
 function initLiveSearch() {
     const searchInput = document.querySelector('input[name="q"]');
     if (!searchInput) return;
 
     let timeout;
+    const resultsContainer = document.createElement('div');
+    resultsContainer.className = 'list-group position-absolute shadow-sm';
+    resultsContainer.style.cssText = 'top: 100%; left: 0; right: 0; z-index: 1000; display: none;';
+    searchInput.parentNode.style.position = 'relative';
+    searchInput.parentNode.appendChild(resultsContainer);
+
     searchInput.addEventListener('input', () => {
         clearTimeout(timeout);
         timeout = setTimeout(async () => {
             const query = searchInput.value.trim();
-            if (query.length < 2) return;
-            
-            const resultsContainer = document.getElementById('searchResults');
-            if (!resultsContainer) return;
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
 
             try {
-                const res = await fetch(`<?= BASE_URL ?>/api/search.php?q=${encodeURIComponent(query)}`);
+                const res = await fetch(`/api/search.php?q=${encodeURIComponent(query)}`);
                 const data = await res.json();
-                
+
                 resultsContainer.innerHTML = '';
-                if (data.news && data.news.length) {
+                if (data.news && data.news.length > 0) {
                     data.news.forEach(item => {
-                        const el = document.createElement('a');
-                        el.href = `<?= BASE_URL ?>/news/${item.slug}`;
-                        el.className = 'list-group-item list-group-item-action';
-                        el.innerHTML = `<strong>${item.title}</strong><br><small class="text-muted">${item.category_name}</small>`;
-                        resultsContainer.appendChild(el);
+                        const a = document.createElement('a');
+                        a.href = `/news/${item.slug}`;
+                        a.className = 'list-group-item list-group-item-action';
+                        a.innerHTML = `<strong>${item.title}</strong><br><small class="text-muted">${item.category_name}</small>`;
+                        resultsContainer.appendChild(a);
                     });
                     resultsContainer.style.display = 'block';
+                } else {
+                    resultsContainer.style.display = 'none';
                 }
             } catch (e) {}
         }, 300);
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target)) {
+            resultsContainer.style.display = 'none';
+        }
     });
 }
 
 // Copy Link Button
 function initCopyLink() {
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
         if (e.target.closest('.copy-link-btn')) {
-            navigator.clipboard.writeText(window.location.href).then(() => {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
                 const btn = e.target.closest('.copy-link-btn');
                 const original = btn.innerHTML;
                 btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
                 setTimeout(() => btn.innerHTML = original, 2000);
-            });
+            } catch (err) {
+                alert('Failed to copy link');
+            }
         }
     });
 }
 
-// Initialize everything
-document.addEventListener('DOMContentLoaded', () => {
-    initDarkMode();
-    initNewsletter();
-    initLiveSearch();
-    initCopyLink();
-    
-    // Auto-hide alerts
-    setTimeout(() => {
-        document.querySelectorAll('.alert').forEach(a => a.style.transition = 'opacity .5s', a.style.opacity = '0');
-    }, 4000);
-});
+// Like / Dislike System
+function initLikeSystem() {
+    const likeBtn = document.getElementById('likeCount');
+    if (!likeBtn) return;
+
+    let likes = parseInt(localStorage.getItem('likes') || '124');
+    likeBtn.textContent = likes;
+
+    likeBtn.parentElement.addEventListener('click', () => {
+        likes++;
+        likeBtn.textContent = likes;
+        localStorage.setItem('likes', likes);
+        likeBtn.parentElement.style.transform = 'scale(1.2)';
+        setTimeout(() => likeBtn.parentElement.style.transform = 'scale(1)', 200);
+    });
+}
 
 // Print Article
 function printArticle() {
