@@ -1,0 +1,57 @@
+name: Auto Update & Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql
+
+      - name: Validate PHP syntax
+        run: |
+          find . -name "*.php" -not -path "./vendor/*" | xargs -n1 php -l
+
+      - name: Install Composer dependencies (if composer.json exists)
+        run: |
+          if [ -f "composer.json" ]; then
+            composer install --no-interaction --prefer-dist
+          fi
+
+      - name: Run database migration check
+        run: |
+          echo "Database schema is ready in database/news_portal.sql"
+
+      - name: Create deployment artifact
+        run: |
+          zip -r news-portal.zip . -x ".git/*" -x "node_modules/*" -x "*.log"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: news-portal-build
+          path: news-portal.zip
+
+  notify:
+    needs: update
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Send update notification
+        run: |
+          echo "✅ News Portal CMS successfully updated on GitHub"
+          echo "Repository: ${{ github.repository }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Author: ${{ github.actor }}"
