@@ -1,0 +1,115 @@
+/* News Portal Custom Styles */
+:root {
+    --primary: #E50914;
+    --secondary: #1F2937;
+}
+
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+}
+
+.news-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.news-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+}
+
+.breaking-news .ticker {
+    display: flex;
+    animation: ticker 25s linear infinite;
+}
+
+@keyframes ticker {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.breaking-news a:hover {
+    text-decoration: underline !important;
+}
+
+.sidebar .card {
+    border: none;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.navbar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.carousel-caption {
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+}
+
+.card-img-top {
+    transition: transform 0.4s ease;
+}
+
+.card:hover .card-img-top {
+    transform: scale(1.05);
+}
+
+.dark-mode {
+    background-color: #111827;
+    color: #F3F4F6;
+}
+
+.dark-mode .card,
+.dark-mode .list-group-item {
+    background-color: #1F2937;
+    color: #F3F4F6;
+    border-color: #374151;
+}
+
+.dark-mode .text-dark {
+    color: #F3F4F6 !important;
+}
+
+.dark-mode .bg-light {
+    background-color: #1F2937 !important;
+}
+
+/* Admin Styles */
+.admin-sidebar {
+    min-height: 100vh;
+    background: #1F2937;
+}
+
+.admin-sidebar .nav-link {
+    color: #9CA3AF;
+    padding: 0.75rem 1rem;
+}
+
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active {
+    color: #fff;
+    background: rgba(229, 9, 20, 0.1);
+    border-left: 3px solid #E50914;
+}
+
+.stats-card {
+    transition: transform 0.2s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-3px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .carousel-caption h3 {
+        font-size: 1.25rem;
+    }
+    
+    .ticker-wrapper {
+        font-size: 0.9rem;
+    }
+}
